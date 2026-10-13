@@ -33,6 +33,67 @@
             margin-bottom: 15px;
             letter-spacing: 1px;
         }
+        .control-bar {
+            text-align: center;
+            margin-bottom: 15px;
+        }
+        .config-btn {
+            background: #151b2b;
+            border: 1px solid #00ff66;
+            color: #00ff66;
+            padding: 6px 14px;
+            font-family: 'Courier New', Courier, monospace;
+            cursor: pointer;
+            border-radius: 4px;
+            font-size: 0.9em;
+            font-weight: bold;
+        }
+        .config-btn:hover {
+            background: #00ff66;
+            color: #0b0f19;
+        }
+        .config-panel {
+            display: none;
+            background: #151b2b;
+            border: 1px solid #2a3650;
+            padding: 20px;
+            border-radius: 8px;
+            max-width: 700px;
+            margin: 0 auto 20px auto;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        }
+        .config-panel h3 {
+            color: #ffcc00;
+            margin-top: 0;
+            border-bottom: 1px solid #2a3650;
+            padding-bottom: 8px;
+            font-size: 1em;
+        }
+        .config-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        .config-item label {
+            display: block;
+            font-size: 0.85em;
+            color: #88aacc;
+            margin-bottom: 5px;
+        }
+        .config-item input {
+            width: 100%;
+            background: #0b0f19;
+            border: 1px solid #2a3650;
+            color: #00ff66;
+            padding: 6px;
+            font-family: 'Courier New', Courier, monospace;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .config-actions {
+            margin-top: 15px;
+            text-align: right;
+        }
         .status-banner {
             text-align: center;
             padding: 12px;
@@ -57,11 +118,32 @@
             border-radius: 8px;
             text-align: center;
             box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            width: 100%;
+            box-sizing: border-box;
         }
         .gauge-card h3 {
-            margin: 0 0 10px 0;
+            margin: 0 0 8px 0;
             font-size: 0.90em;
             color: #dde1e5;
+        }
+        .sparkline-box {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #0b0f19;
+            border: 1px solid #1f2937;
+            padding: 4px 8px;
+            border-radius: 4px;
+            margin-top: 10px;
+        }
+        .sparkline-svg {
+            width: 130px;
+            height: 22px;
+        }
+        .trend-text {
+            font-size: 0.75em;
+            color: #88aacc;
+            font-weight: bold;
         }
         .external-feeds {
             display: grid;
@@ -179,6 +261,7 @@
         }
         @media (max-width: 900px) {
             .external-feeds { grid-template-columns: 1fr; }
+            .config-grid { grid-template-columns: 1fr; }
         }
     </style>
 </head>
@@ -188,26 +271,102 @@
     <div class="subtitle">Dr. Patricia Reiff Standard — Ultimate 15-Dial Global Observatory Suite</div>
     <div id="clockBanner" class="clock-banner">BRISBANE TIME: --:--:--</div>
     
+    <!-- Configurable Threshold Controls Toggle -->
+    <div class="control-bar">
+        <button class="config-btn" onclick="toggleConfigPanel()">⚙ Configure Alert Thresholds</button>
+    </div>
+
+    <!-- Config Panel Drawer -->
+    <div id="configPanel" class="config-panel">
+        <h3>CUSTOM STORM ALERT THRESHOLDS</h3>
+        <div class="config-grid">
+            <div class="config-item">
+                <label>Red Alert CPCP (kV) &gt;=</label>
+                <input type="number" id="cfgCpcp" value="200">
+            </div>
+            <div class="config-item">
+                <label>Southward Bz (nT) &lt;=</label>
+                <input type="number" id="cfgBz" value="-10">
+            </div>
+            <div class="config-item">
+                <label>Magnetopause Standoff Rmp (RE) &lt;=</label>
+                <input type="number" id="cfgRmp" value="7">
+            </div>
+            <div class="config-item">
+                <label>Planetary Kp Index &gt;=</label>
+                <input type="number" id="cfgKp" value="6">
+            </div>
+        </div>
+        <div class="config-actions">
+            <button class="config-btn" onclick="saveThresholds()">Apply Settings</button>
+        </div>
+    </div>
+
     <div id="statusBanner" class="status-banner" style="color: #00ff66;">SYSTEM STATUS: INITIALIZING 15-DIAL ENGINE...</div>
 
-    <!-- 15 Primary Dials Grid -->
+    <!-- 15 Primary Dials Grid with Sparkline History Trackers -->
     <div class="dials-grid">
-        <div class="gauge-card"><h3>1. Boyle Index (PCP)</h3><canvas id="gaugeCPCP"></canvas></div>
-        <div class="gauge-card"><h3>2. IMF Clock Angle (&theta;)</h3><canvas id="gaugeClock"></canvas></div>
-        <div class="gauge-card"><h3>3. Solar Wind Velocity (<i>v</i>)</h3><canvas id="gaugeSpeed"></canvas></div>
-        <div class="gauge-card"><h3>4. Proton Density (<i>n</i>)</h3><canvas id="gaugeDensity"></canvas></div>
-        <div class="gauge-card"><h3>5. Ram Pressure (<i>P<sub>ram</sub></i>)</h3><canvas id="gaugePressure"></canvas></div>
-        <div class="gauge-card"><h3>6. Alfvén Mach Number (<i>M<sub>A</sub></i>)</h3><canvas id="gaugeMachA"></canvas></div>
-        <div class="gauge-card"><h3>7. Gas Mach Number (<i>M<sub>g</sub></i>)</h3><canvas id="gaugeMachG"></canvas></div>
-        <div class="gauge-card"><h3>8. IMF B<sub>z</sub> Component</h3><canvas id="gaugeBz"></canvas></div>
-        <div class="gauge-card"><h3>9. Vx Earthward Velocity</h3><canvas id="gaugeVx"></canvas></div>
-        <div class="gauge-card"><h3>10. Proton Temperature (<i>T<sub>p</sub></i>)</h3><canvas id="gaugeTemp"></canvas></div>
-        <div class="gauge-card"><h3>11. Total Magnetic Field (<i>Bt</i>)</h3><canvas id="gaugeBt"></canvas></div>
-        <div class="gauge-card"><h3>12. GIC & Telluric Risk (<i>dE/dt</i>)</h3><canvas id="gaugeGic"></canvas></div>
-        <div class="gauge-card"><h3>13. Planetary K-Index (<i>Kp</i>)</h3><canvas id="gaugeKp"></canvas></div>
+        <div class="gauge-card">
+            <h3>1. Boyle Index (PCP)</h3><canvas id="gaugeCPCP"></canvas>
+            <div class="sparkline-box"><svg class="sparkline-svg" id="spark_cpcp"></svg><span class="trend-text" id="trend_cpcp">--</span></div>
+        </div>
+        <div class="gauge-card">
+            <h3>2. IMF Clock Angle (&theta;)</h3><canvas id="gaugeClock"></canvas>
+            <div class="sparkline-box"><svg class="sparkline-svg" id="spark_clock"></svg><span class="trend-text" id="trend_clock">--</span></div>
+        </div>
+        <div class="gauge-card">
+            <h3>3. Solar Wind Velocity (<i>v</i>)</h3><canvas id="gaugeSpeed"></canvas>
+            <div class="sparkline-box"><svg class="sparkline-svg" id="spark_speed"></svg><span class="trend-text" id="trend_speed">--</span></div>
+        </div>
+        <div class="gauge-card">
+            <h3>4. Proton Density (<i>n</i>)</h3><canvas id="gaugeDensity"></canvas>
+            <div class="sparkline-box"><svg class="sparkline-svg" id="spark_density"></svg><span class="trend-text" id="trend_density">--</span></div>
+        </div>
+        <div class="gauge-card">
+            <h3>5. Ram Pressure (<i>P<sub>ram</sub></i>)</h3><canvas id="gaugePressure"></canvas>
+            <div class="sparkline-box"><svg class="sparkline-svg" id="spark_pressure"></svg><span class="trend-text" id="trend_pressure">--</span></div>
+        </div>
+        <div class="gauge-card">
+            <h3>6. Alfvén Mach Number (<i>M<sub>A</sub></i>)</h3><canvas id="gaugeMachA"></canvas>
+            <div class="sparkline-box"><svg class="sparkline-svg" id="spark_machA"></svg><span class="trend-text" id="trend_machA">--</span></div>
+        </div>
+        <div class="gauge-card">
+            <h3>7. Gas Mach Number (<i>M<sub>g</sub></i>)</h3><canvas id="gaugeMachG"></canvas>
+            <div class="sparkline-box"><svg class="sparkline-svg" id="spark_machG"></svg><span class="trend-text" id="trend_machG">--</span></div>
+        </div>
+        <div class="gauge-card">
+            <h3>8. IMF B<sub>z</sub> Component</h3><canvas id="gaugeBz"></canvas>
+            <div class="sparkline-box"><svg class="sparkline-svg" id="spark_bz"></svg><span class="trend-text" id="trend_bz">--</span></div>
+        </div>
+        <div class="gauge-card">
+            <h3>9. Vx Earthward Velocity</h3><canvas id="gaugeVx"></canvas>
+            <div class="sparkline-box"><svg class="sparkline-svg" id="spark_vx"></svg><span class="trend-text" id="trend_vx">--</span></div>
+        </div>
+        <div class="gauge-card">
+            <h3>10. Proton Temperature (<i>T<sub>p</sub></i>)</h3><canvas id="gaugeTemp"></canvas>
+            <div class="sparkline-box"><svg class="sparkline-svg" id="spark_temp"></svg><span class="trend-text" id="trend_temp">--</span></div>
+        </div>
+        <div class="gauge-card">
+            <h3>11. Total Magnetic Field (<i>Bt</i>)</h3><canvas id="gaugeBt"></canvas>
+            <div class="sparkline-box"><svg class="sparkline-svg" id="spark_bt"></svg><span class="trend-text" id="trend_bt">--</span></div>
+        </div>
+        <div class="gauge-card">
+            <h3>12. GIC & Telluric Risk (<i>dE/dt</i>)</h3><canvas id="gaugeGic"></canvas>
+            <div class="sparkline-box"><svg class="sparkline-svg" id="spark_gic"></svg><span class="trend-text" id="trend_gic">--</span></div>
+        </div>
+        <div class="gauge-card">
+            <h3>13. Planetary K-Index (<i>Kp</i>)</h3><canvas id="gaugeKp"></canvas>
+            <div class="sparkline-box"><svg class="sparkline-svg" id="spark_kp"></svg><span class="trend-text" id="trend_kp">--</span></div>
+        </div>
         <!-- AI Signature Additions (Dials 14 & 15) -->
-        <div class="gauge-card"><h3>14. Dawn-Dusk Electric Field (<i>E<sub>y</sub></i>)</h3><canvas id="gaugeEy"></canvas></div>
-        <div class="gauge-card"><h3>15. Magnetopause Standoff (<i>R<sub>mp</sub></i>)</h3><canvas id="gaugeRmp"></canvas></div>
+        <div class="gauge-card">
+            <h3>14. Dawn-Dusk Electric Field (<i>E<sub>y</sub></i>)</h3><canvas id="gaugeEy"></canvas>
+            <div class="sparkline-box"><svg class="sparkline-svg" id="spark_ey"></svg><span class="trend-text" id="trend_ey">--</span></div>
+        </div>
+        <div class="gauge-card">
+            <h3>15. Magnetopause Standoff (<i>R<sub>mp</sub></i>)</h3><canvas id="gaugeRmp"></canvas>
+            <div class="sparkline-box"><svg class="sparkline-svg" id="spark_rmp"></svg><span class="trend-text" id="trend_rmp">--</span></div>
+        </div>
     </div>
 
     <!-- Side-by-Side External Workflow Feeds -->
@@ -310,6 +469,27 @@
         setInterval(updateBrisbaneClock, 1000);
         updateBrisbaneClock();
 
+        // Config Panel Toggles & Threshold States
+        function toggleConfigPanel() {
+            var panel = document.getElementById('configPanel');
+            panel.style.display = panel.style.display === 'block' ? 'none' : 'block';
+        }
+
+        var thresholds = {
+            cpcp: 200,
+            bz: -10,
+            rmp: 7,
+            kp: 6
+        };
+
+        function saveThresholds() {
+            thresholds.cpcp = parseFloat(document.getElementById('cfgCpcp').value) || 200;
+            thresholds.bz = parseFloat(document.getElementById('cfgBz').value) || -10;
+            thresholds.rmp = parseFloat(document.getElementById('cfgRmp').value) || 7;
+            thresholds.kp = parseFloat(document.getElementById('cfgKp').value) || 6;
+            document.getElementById('configPanel').style.display = 'none';
+        }
+
         // Initialize All 15 Gauges
         var gauges = {
             cpcp: new RadialGauge({ renderTo: 'gaugeCPCP', width: 220, height: 220, minValue: 0, maxValue: 300, majorTicks: ['0','50','100','150','200','250','300'], minorTicks: 5, strokeTicks: true, highlights: [{from: 0, to: 150, color: 'rgba(0,255,100,.3)'}, {from: 150, to: 200, color: 'rgba(255,204,0,.4)'}, {from: 200, to: 300, color: 'rgba(255,0,50,.5)'}], colorPlate: "#1b2234", colorMajorTicks: "#f5f5f5", colorMinorTicks: "#ddd", colorTitle: "#fff", colorUnits: "#ccc", colorNumbers: "#eee", colorPen: "#fff", units: "kV", title: "Polar Cap Potential", value: 0 }),
@@ -336,22 +516,86 @@
             }
         }
 
+        // History Storage for Sparklines (Max 20 points per metric)
+        var historyData = {};
+        for (var key in gauges) {
+            historyData[key] = [];
+        }
+
+        function updateSparkline(key, value) {
+            var arr = historyData[key];
+            arr.push(value);
+            if (arr.length > 20) arr.shift();
+
+            var svg = document.getElementById('spark_' + key);
+            var trendLabel = document.getElementById('trend_' + key);
+            if (!svg) return;
+
+            var min = Math.min.apply(null, arr);
+            var max = Math.max.apply(null, arr);
+            var range = max - min === 0 ? 1 : max - min;
+
+            var width = 130;
+            var height = 22;
+            var points = [];
+
+            for (var i = 0; i < arr.length; i++) {
+                var x = (i / (Math.max(arr.length - 1, 1))) * width;
+                var y = height - ((arr[i] - min) / range) * (height - 4) - 2;
+                points.push(x.toFixed(1) + ',' + y.toFixed(1));
+            }
+
+            svg.innerHTML = '<polyline fill="none" stroke="#00ff66" stroke-width="1.5" points="' + points.join(' ') + '"/>';
+
+            // Trend indicator calculation
+            if (arr.length >= 2) {
+                var diff = arr[arr.length - 1] - arr[arr.length - 2];
+                if (diff > 0.05) {
+                    trendLabel.innerText = '▲ +' + diff.toFixed(1);
+                    trendLabel.style.color = '#00ff66';
+                } else if (diff < -0.05) {
+                    trendLabel.innerText = '▼ ' + diff.toFixed(1);
+                    trendLabel.style.color = '#ff0033';
+                } else {
+                    trendLabel.innerText = '▬ FLAT';
+                    trendLabel.style.color = '#88aacc';
+                }
+            }
+        }
+
         var pingCount = 0;
 
         async function updateSpaceWeather() {
             pingCount++;
             try {
                 var magRes = await fetch('https://services.swpc.noaa.gov/json/dscovr/dscovr_mag_1m.json');
-                var plasmaRes = await fetch('https://services.swpc.noaa.gov/json/dscovr/dscovr_plasma_1m.json');
+                var plasmaRes = await fetch('https://services.swpc.noaa.gov/products/solar-wind/plasma-1-m.json');
                 
                 if (!magRes.ok || !plasmaRes.ok) throw new Error("API response not ok");
 
                 var magData = await magRes.json();
                 var plasmaData = await plasmaRes.json();
                 
-                processTelemetry(magData[magData.length - 1], plasmaData[plasmaData.length - 1], false);
+                // Walk backward from the end to find latest valid row with null safety
+                let latestPlasmaRow = plasmaData[plasmaData.length - 1];
+                for (let i = plasmaData.length - 1; i >= 1; i--) {
+                    if (plasmaData[i][2] !== null && !isNaN(plasmaData[i][2])) {
+                        latestPlasmaRow = plasmaData[i];
+                        break;
+                    }
+                }
+
+                var livePlasma = {
+                    density: parseFloat(latestPlasmaRow[1]),
+                    speed: parseFloat(latestPlasmaRow[2]),
+                    temperature: parseFloat(latestPlasmaRow[3]) || 100000,
+                    vx_gse: -parseFloat(latestPlasmaRow[2])
+                };
+
+                processTelemetry(magData[magData.length - 1], livePlasma, false);
 
             } catch (err) {
+                console.warn("NOAA fetch delay, falling back to simulation telemetry...", err);
                 var jitterSpeed = (Math.random() * 6) - 3;
                 var jitterDensity = (Math.random() * 0.3) - 0.15;
                 var jitterBz = (Math.random() * 0.4) - 0.2;
@@ -388,44 +632,52 @@
             var vA = 20 * B / Math.sqrt(Math.max(n, 0.1));
             var machA = vA > 0 ? v / vA : 8;
 
-            // Derived AI metrics: Ey (Dawn-Dusk Electric Field in mV/m) and Rmp (Magnetopause Standoff in RE)
             var Ey = -(Vx * Bz) * 0.001;
             var rmp = 10.22 * Math.pow(Math.max(pRam, 0.1), -1/6);
 
-            // GIC Risk Calculation
             var bzFactor = Bz < 0 ? Math.abs(Bz) : 0.5;
             var gicRaw = (pRam * 3.5) + (bzFactor * 2.2) + ((v / 400) * 5);
             var gicIndex = Math.min(100, Math.max(0, gicRaw * 2.5));
 
-            // Planetary K-Index estimation
             var kpRaw = (cpcp / 35) + (bzFactor / 2) + (v / 250);
             var kpIndex = Math.min(9, Math.max(0, kpRaw));
 
-            gauges.cpcp.value = cpcp;
-            gauges.clock.value = theta;
-            gauges.speed.value = v;
-            gauges.density.value = n;
-            gauges.pressure.value = pRam;
-            gauges.machA.value = Math.min(machA, 50);
-            gauges.machG.value = Math.min(machG, 25);
-            gauges.bz.value = Bz;
-            gauges.vx.value = Math.max(-900, Math.min(-200, Vx));
-            gauges.temp.value = Math.max(0, Math.min(1000000, T));
-            gauges.bt.value = Math.max(0, Math.min(40, Bt));
-            gauges.gic.value = gicIndex;
-            gauges.kp.value = kpIndex;
-            gauges.ey.value = Math.max(-10, Math.min(15, Ey));
-            gauges.rmp.value = Math.max(5, Math.min(13, rmp));
+            // Assign values to gauges and update sparklines
+            var values = {
+                cpcp: cpcp,
+                clock: theta,
+                speed: v,
+                density: n,
+                pressure: pRam,
+                machA: Math.min(machA, 50),
+                machG: Math.min(machG, 25),
+                bz: Bz,
+                vx: Math.max(-900, Math.min(-200, Vx)),
+                temp: Math.max(0, Math.min(1000000, T)),
+                bt: Math.max(0, Math.min(40, Bt)),
+                gic: gicIndex,
+                kp: kpIndex,
+                ey: Math.max(-10, Math.min(15, Ey)),
+                rmp: Math.max(5, Math.min(13, rmp))
+            };
+
+            for (var key in values) {
+                if (gauges.hasOwnProperty(key)) {
+                    gauges[key].value = values[key];
+                    updateSparkline(key, values[key]);
+                }
+            }
 
             var banner = document.getElementById('statusBanner');
             var timestamp = new Date().toLocaleTimeString('en-AU', { timeZone: 'Australia/Brisbane' });
             var dataSource = isFallback ? "SIMULATION" : "LIVE NOAA L1 STREAM";
             
-            if (cpcp >= 200 || Bz <= -10 || gicIndex >= 65 || kpIndex >= 6 || rmp <= 7) {
+            // Evaluated against dynamic user thresholds
+            if (cpcp >= thresholds.cpcp || Bz <= thresholds.bz || gicIndex >= 65 || kpIndex >= thresholds.kp || rmp <= thresholds.rmp) {
                 banner.innerText = "🚨 RED ALERT [" + dataSource + " #" + pingCount + " @ " + timestamp + "] | Rmp: " + rmp.toFixed(1) + " RE | Kp: " + kpIndex.toFixed(1);
                 banner.style.color = '#ff0033';
                 banner.style.borderColor = '#ff0033';
-            } else if (cpcp >= 150 || (Bz <= -5 && Bz > -10) || gicIndex >= 30 || kpIndex >= 4 || rmp <= 9.5) {
+            } else if (cpcp >= thresholds.cpcp * 0.75 || (Bz <= thresholds.bz * 0.5 && Bz > thresholds.bz) || gicIndex >= 30 || kpIndex >= thresholds.kp - 2 || rmp <= thresholds.rmp + 2.5) {
                 banner.innerText = "⚠️ YELLOW WARNING [" + dataSource + " #" + pingCount + " @ " + timestamp + "] | Rmp: " + rmp.toFixed(1) + " RE | Kp: " + kpIndex.toFixed(1);
                 banner.style.color = '#ffcc00';
                 banner.style.borderColor = '#ffcc00';
